@@ -11,7 +11,7 @@ wget https://raw.githubusercontent.com/shzxm/efb-install/main/install.sh -O inst
 目前支持 Centos7 Ubuntu18/20 Debian8/9/10
 
 
-欢迎来我 [blog](https://blog.shzxm.com) 观看 手动部署教程 
+欢迎来我 [blog](https://blog.shzxm.com) 观看 [手动部署教程](https://blog.shzxm.com/2020/12/31/efb/) 
 
 相关的配置文件修改 [blog](https://blog.shzxm.com) 也有写
 
