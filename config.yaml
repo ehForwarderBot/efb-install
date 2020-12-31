@@ -1,0 +1,7 @@
+master_channel: blueset.telegram
+slave_channels:
+- blueset.wechat
+#这一部分为插件,更多功能请查看文档
+flags: 
+  delete_on_edit: true
+  #以撤回并重新发送的方式代替编辑消息

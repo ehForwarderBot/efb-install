@@ -1,0 +1,11 @@
+token: "xxxx" #在""中间 填入你之前找botfather申请的api
+admins:
+- 1234 #把数字修改为你的个人 telegram id 在上方获取过
+#- 2345 #如果,想要多个账号使用同一个微信,可在这里加入第二个id或者多个id,去掉开头的#
+flags:
+  send_image_as_file: true
+  #将所有图像消息作为文件发送,以防止主动报文的图像压缩.需要更多的流量,可以关闭,改为false
+  animated_stickers: true
+  #启用对动画贴纸的实验性支持启用对动画贴纸的实验性支持,该依赖已包含在教程依赖
+  default_media_prompt: text
+  #图片/视频/文件消息没有标题时的占位符文本.
