@@ -185,7 +185,7 @@ debian_python_check() {
         make && make install >>/dev/null 2>&1
         cd .. >>/dev/null 2>&1
         rm -rf Python-3.8.5 Python-3.8.5.tar.gz >>/dev/null 2>&1
-        PYP=$(which python3.8)
+        PYP=$(which python3.6)
         update-alternatives --install $PYP python3 $PYV 1 >>/dev/null 2>&1
       fi
     fi
