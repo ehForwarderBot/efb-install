@@ -1,4 +1,0 @@
-master_channel: blueset.telegram
-slave_channels:
-- blueset.wechat
-#这一部分为插件,更多功能请查看文档

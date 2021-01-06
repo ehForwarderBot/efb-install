@@ -249,15 +249,12 @@ pypi_install() {
 }
 
 configure() {
-  config_file=~/.ehforwarderbot/profiles/default/blueset.telegram/config.yaml
-  echo "生成配置文件中 . . ."
-  echo "bot api 申请地址： https://t.me/BotFather"
-  printf "请输入 bot api ："
-  read token <&1
-  sed -i -e "s/xxxx/${token}/g" $config_file
-  printf "请输入 个人 id ："
-  read admins <&1
-  sed -i -e "s/- 1234/- ${admins}/g" $config_file
+  cd /root
+  echo "配置文件由 efb-wizard 自动生成"
+  LANG=zh_CN.UTF-8
+  echo "无需定制 使用默认即可"
+  sleep 3
+  efb-wizard
 }
 
 login_screen() {
@@ -269,8 +266,7 @@ login_screen() {
   screen -x -S efb -p 0 -X stuff "/usr/local/bin/ehforwarderbot"
   screen -x -S efb -p 0 -X stuff $'\n'
   sleep 1
-  while [ ! -f "/root/.ehforwarderbot/profiles/default/blueset.wechat/wxpy.pkl" ] ;
-  do
+  while [ ! -f "/root/.ehforwarderbot/profiles/default/blueset.wechat/wxpy.pkl" ]; do
     echo "请 扫一扫 二维码登录 微信"
     cat /root/.ehforwarderbot/profiles/default/screenlog.0
     sleep 5
