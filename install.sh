@@ -245,6 +245,7 @@ pypi_install() {
   echo "下载安装 pypi 依赖中 . . ."
   $PYV -m pip install --upgrade pip >>/dev/null 2>&1
   $PYV -m pip install -r requirements.txt >>/dev/null 2>&1
+  $PYV -m pip install --upgrade Pillow >>/dev/null 2>&1
   sudo -H $PYV -m pip install --ignore-installed PyYAML >>/dev/null 2>&1
 }
 
