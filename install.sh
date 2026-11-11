@@ -20,6 +20,9 @@ else
   SERVICE_HOME="/var/lib/efb-$EFB_PROFILE"
   VENV_DIR="/opt/efb-$EFB_PROFILE/venv"
 fi
+# Updates may select a new venv, leaving the former one intact for rollback.
+VENV_DIR="${EFB_VENV_DIR:-$VENV_DIR}"
+[[ "$VENV_DIR" =~ ^/opt/efb[-_a-zA-Z0-9./]*/venv([-_a-zA-Z0-9.]*)?$ ]] || die "EFB_VENV_DIR 必须是 /opt/efb* 下的绝对 venv 路径。"
 SERVICE_FILE="/etc/systemd/system/$SERVICE.service"
 EFB_NOFILE="${EFB_NOFILE:-16384}"
 [[ "$EFB_NOFILE" =~ ^[0-9]+$ ]] && (( EFB_NOFILE >= 1024 && EFB_NOFILE <= 1048576 )) || die "EFB_NOFILE 应为 1024 到 1048576 的整数。"
@@ -86,6 +89,13 @@ native_install() {
   need_bundle
   command -v systemctl >/dev/null 2>&1 || die "需要 systemd。"
   native_guard
+  if [[ -f "$SERVICE_FILE" ]]; then
+    local prior_start
+    prior_start="$(systemctl show "$SERVICE" --property=ExecStart --value 2>/dev/null || true)"
+    if [[ "$prior_start" == *"$VENV_DIR/bin/ehforwarderbot"* || "$prior_start" == *"$VENV_DIR/bin/python"* ]]; then
+      die "现有服务已使用 $VENV_DIR，禁止原地覆盖依赖。请先备份并通过 EFB_VENV_DIR 指定新的版本化 venv，再执行更新。"
+    fi
+  fi
   native_packages
 
   local python_bin="${EFB_PYTHON:-python3}"
@@ -107,12 +117,6 @@ native_install() {
   install -d -m 0750 -o "$SERVICE_USER" -g "$SERVICE_USER" "$SERVICE_HOME"
   install -d -m 0755 "$(dirname "$VENV_DIR")"
 
-  # Only a unit that we own may be stopped/replaced.
-  if [[ -f "$SERVICE_FILE" ]] && systemctl is-active --quiet "$SERVICE"; then
-    info "停止本脚本管理的旧实例，升级依赖后再启动。"
-    systemctl stop "$SERVICE"
-  fi
-
   info "创建独立 Python venv（不使用系统 pip，不修改 python3 alternatives）"
   if [[ ! -x "$VENV_DIR/bin/python" ]]; then
     "$python_bin" -m venv "$VENV_DIR" || die "venv 创建失败，请检查所选 Python 对应的 venv 包。"
@@ -131,6 +135,17 @@ native_install() {
   fi
   "$VENV_DIR/bin/python" "$REPO_DIR/tools/validate_profile.py" --home "$SERVICE_HOME" --profile "$EFB_PROFILE" ||
     die "Profile 依赖校验失败：请检查 requirements-extra.txt 中的可选中间件。"
+
+  local previous_unit=""
+  if [[ -f "$SERVICE_FILE" ]]; then
+    previous_unit="$(mktemp)"
+    chmod 0600 "$previous_unit"
+    cp -p "$SERVICE_FILE" "$previous_unit"
+    if systemctl is-active --quiet "$SERVICE"; then
+      info "新版本通过检查后停止旧服务，再切换到新虚拟环境。"
+      systemctl stop "$SERVICE"
+    fi
+  fi
 
   cat > "$SERVICE_FILE" <<EFB_UNIT
 # Managed by ehForwarderBot/efb-install
@@ -158,7 +173,16 @@ ProtectSystem=full
 WantedBy=multi-user.target
 EFB_UNIT
   systemctl daemon-reload
-  systemctl enable --now "$SERVICE"
+  if ! systemctl enable --now "$SERVICE"; then
+    if [[ -n "$previous_unit" && -f "$previous_unit" ]]; then
+      cp -p "$previous_unit" "$SERVICE_FILE"
+      systemctl daemon-reload
+      systemctl restart "$SERVICE" || info "旧服务自动恢复失败，请检查 journalctl -u $SERVICE。"
+    fi
+    [[ -z "$previous_unit" ]] || rm -f "$previous_unit"
+    die "新服务启动失败；若为已有安装，已尝试恢复原来的 systemd unit。"
+  fi
+  [[ -z "$previous_unit" ]] || rm -f "$previous_unit"
   info "原生 EFB ($EFB_PROFILE) 已启动。日志: journalctl -u $SERVICE -f"
 }
 
@@ -395,6 +419,7 @@ usage() {
 环境变量:
   EFB_PROFILE=default                  # 原生安装所用 Profile，Docker 从 .env 读取
   EFB_PYTHON=/path/to/python3           # 原生模式所使用的 Python
+  EFB_VENV_DIR=/opt/efb-alpha/venv-v2  # 原生更新时，新 venv 应使用独立路径
   EFB_NOFILE=16384                      # 原生 systemd 的 LimitNOFILE（非泄漏修复）
 注意: 此脚本不会卸载或自动迁移已有 EFB 实例，也不会清理登录缓存。
 HELP

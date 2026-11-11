@@ -76,9 +76,11 @@ EFB_PROFILE=alpha bash install.sh native info
 sudo EFB_PROFILE=alpha bash install.sh native install
 sudo EFB_PROFILE=alpha bash install.sh native doctor
 sudo EFB_PROFILE=alpha bash install.sh native backup /安全路径/alpha.tar.gz
+# 更新时先备份，再切换到另一套 venv；不直接覆盖正在使用的依赖：
+sudo EFB_PROFILE=alpha EFB_VENV_DIR=/opt/efb-alpha/venv-v2 bash install.sh native update
 ```
 
-Profile 只允许小写字母、数字、连字符和下划线（以字母开头，最多 24 字符）。三套原生安装可各自创建 Profile，互不共用 SQLite，也不会覆盖别的 systemd 服务。可以通过 `EFB_NOFILE=65536` 设置该新服务的文件描述符上限，**但提高上限不是修复连接泄漏**。
+Profile 只允许小写字母、数字、连字符和下划线（以字母开头，最多 24 字符）。三套原生安装可各自创建 Profile，互不共用 SQLite，也不会覆盖别的 systemd 服务。可以通过 `EFB_NOFILE=65536` 设置该新服务的文件描述符上限，**但提高上限不是修复连接泄漏**。若服务已使用某个 venv，脚本会拒绝对这个环境直接运行 `pip install`；更新时应使用另一个版本化的 `EFB_VENV_DIR`，新依赖及 Profile 插件检查通过后才切换 systemd，启动失败会尝试恢复旧 unit。切换前仍必须备份数据，不能把恢复 unit 当成数据库回滚。
 
 默认采用系统的 `python3`。建议先确认其与 EFB 依赖兼容；如需指定，使用 `sudo EFB_PYTHON=/usr/bin/python3.12 bash install.sh native install`，指定的 Python 需能运行 `venv`。在 Python 3.13/3.14 上，**依赖可以安装成功，也不等于插件可正常运行**。
 

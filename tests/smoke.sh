@@ -18,6 +18,8 @@ grep -q '^EFB_CONFIG_DIR=./data$' "$tmp/.env"
 grep -q '^EFB_PROFILE=default$' "$tmp/.env"
 python3 -m py_compile tools/validate_profile.py
 [[ "$(EFB_PROFILE=alpha bash install.sh native info)" == *"Service=efb-alpha Profile=alpha User=efb-alpha Home=/var/lib/efb-alpha Venv=/opt/efb-alpha/venv"* ]]
+[[ "$(EFB_PROFILE=alpha EFB_VENV_DIR=/opt/efb-alpha/venv-v2 bash install.sh native info)" == *"Venv=/opt/efb-alpha/venv-v2"* ]]
+if EFB_VENV_DIR=/tmp/venv bash install.sh native info >/dev/null 2>&1; then echo "Unsafe venv path accepted" >&2; exit 1; fi
 [[ "$(bash install.sh native info)" == *"Service=efb Profile=default User=efb Home=/var/lib/efb Venv=/opt/efb/venv"* ]]
 if EFB_PROFILE=BAD bash install.sh native info >/dev/null 2>&1; then echo "Invalid Profile accepted" >&2; exit 1; fi
 if EFB_NOFILE=invalid bash install.sh --help >/dev/null 2>&1; then echo "Invalid NOFILE accepted" >&2; exit 1; fi
