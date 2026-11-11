@@ -1,0 +1,20 @@
+services:
+  efb:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: efb-install:local
+    restart: unless-stopped
+    init: true
+    user: "${EFB_UID:-1000}:${EFB_GID:-1000}"
+    environment:
+      HOME: /home/efb
+      PYTHONUNBUFFERED: "1"
+      TZ: "${TZ:-UTC}"
+    volumes:
+      - "${EFB_CONFIG_DIR:-./data}:/home/efb/.ehforwarderbot"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # EFB uses outgoing connections; do not expose any inbound ports by default.

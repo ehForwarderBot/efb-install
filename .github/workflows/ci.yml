@@ -1,0 +1,23 @@
+name: Validate installer and Docker image
+
+on:
+  push:
+    branches: [main, "feature/**"]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Shell smoke tests
+        run: bash tests/smoke.sh
+      - name: Validate Compose
+        run: |
+          bash install.sh docker init
+          docker compose --env-file .env config --quiet
+      - name: Build Docker image and validate installed dependencies
+        run: |
+          docker compose --env-file .env build efb
+          docker compose --env-file .env run --rm --no-deps efb python -m pip check
