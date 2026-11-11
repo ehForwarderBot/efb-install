@@ -1,0 +1,43 @@
+name: Validate installer and Docker image
+
+on:
+  push:
+    branches: [main, "feature/**"]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Shell smoke tests
+        run: bash tests/smoke.sh
+      - name: Validate Compose
+        run: |
+          bash install.sh docker init
+          docker compose --env-file .env config --quiet
+      - name: Build Docker image and validate installed dependencies
+        run: |
+          docker compose --env-file .env build efb
+          docker compose --env-file .env run --rm --no-deps efb python -m pip check
+          docker compose --env-file .env run --rm --no-deps efb python -c 'import ehforwarderbot.__main__, ehforwarderbot.wizard, efb_telegram_master, efb_wechat_slave; from telegram.ext import JobQueue; JobQueue()'
+          docker compose --env-file .env run --rm --no-deps efb python -c 'import os,pwd; assert pwd.getpwuid(os.getuid()).pw_dir == os.environ["HOME"]'
+          mkdir -p data/profiles/default
+          printf 'master_channel: blueset.telegram\nslave_channels: [blueset.wechat]\nmiddlewares: []\n' > data/profiles/default/config.yaml
+          docker compose --env-file .env run --rm --no-deps efb python /usr/local/lib/efb-install/validate_profile.py --profile default
+          printf 'master_channel: blueset.telegram\nslave_channels: [blueset.wechat]\nmiddlewares: [missing.example_plugin]\n' > data/profiles/default/config.yaml
+          if docker compose --env-file .env run --rm --no-deps efb python /usr/local/lib/efb-install/validate_profile.py --profile default; then
+            echo "Missing middleware was not detected" >&2
+            exit 1
+          fi
+          docker compose --env-file .env run --rm --no-deps efb ehforwarderbot --help > /dev/null
+          docker compose --env-file .env run --rm --no-deps efb efb-wizard --help > /dev/null
+      - name: Verify optional production middlewares in isolated container
+        run: |
+          printf 'master_channel: blueset.telegram\nslave_channels: [blueset.wechat]\nmiddlewares: [catbaron.link_preview, catbaron.mp_instantview]\n' > data/profiles/default/config.yaml
+          docker compose --env-file .env run --rm --no-deps efb sh -ec '
+            python -m pip install --user "efb-link-preview-middleware==0.1.0" "efb-mp-instantview-middleware==0.3.2"
+            python -m pip check
+            python /usr/local/lib/efb-install/validate_profile.py --profile default
+          '

@@ -1,4 +1,11 @@
 ehforwarderbot
-efb-telegram-master 
-efb-wechat-slave
 efb-telegram-master[tgs]
+efb-wechat-slave
+# PTB 13.x imports urllib3.contrib.appengine, removed in urllib3 2.x.
+urllib3>=1.26.18,<2
+# ETM database code was developed against Peewee 3.x.
+peewee>=3.17,<4
+# EFB 2.x still imports pkg_resources (removed from setuptools 82).
+setuptools>=67.5,<82
+# APScheduler 3.6.3 requires pytz-based timezones (tzlocal 3+ changed API).
+tzlocal==2.1

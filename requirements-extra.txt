@@ -1,0 +1,5 @@
+# Optional EFB middleware; uncomment and verify compatibility before enabling.
+# Observed in three production profiles (not installed by default):
+# efb-link-preview-middleware==0.1.0
+# efb-mp-instantview-middleware==0.3.2
+# Custom local middlewares must be installed separately in the target environment.
