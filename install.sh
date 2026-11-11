@@ -49,6 +49,14 @@ native_guard() {
   if [[ -e "$SERVICE_FILE" ]] && ! grep -Fq 'Managed by ehForwarderBot/efb-install' "$SERVICE_FILE"; then
     die "$SERVICE_FILE 已存在，且不是本脚本创建的。为保护现有 EFB 实例，拒绝覆盖；请先手动迁移。"
   fi
+  # Also protect units installed in /lib/systemd/system or /usr/lib/systemd/system.
+  if command -v systemctl >/dev/null 2>&1; then
+    local unit_path
+    unit_path="$(systemctl show -p FragmentPath --value "$SERVICE" 2>/dev/null || true)"
+    if [[ -n "$unit_path" && "$unit_path" != "$SERVICE_FILE" && -f "$unit_path" ]]; then
+      die "检测到现有服务 $unit_path。不会覆盖其他 EFB 安装。"
+    fi
+  fi
 }
 
 native_wizard() {

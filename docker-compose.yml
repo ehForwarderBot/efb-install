@@ -9,6 +9,9 @@ services:
     user: "${EFB_UID:-1000}:${EFB_GID:-1000}"
     environment:
       HOME: /home/efb
+      USER: efb
+      LOGNAME: efb
+      XDG_CACHE_HOME: /home/efb/.ehforwarderbot/.cache
       PYTHONUNBUFFERED: "1"
       TZ: "${TZ:-UTC}"
     volumes:
