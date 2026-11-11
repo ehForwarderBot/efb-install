@@ -1,3 +1,7 @@
 ehforwarderbot
 efb-telegram-master[tgs]
 efb-wechat-slave
+# PTB 13.x imports urllib3.contrib.appengine, removed in urllib3 2.x.
+urllib3>=1.26.18,<2
+# ETM database code was developed against Peewee 3.x.
+peewee>=3.17,<4

@@ -2,7 +2,7 @@
 
 本仓库为 **EFB 2 + Telegram Master + WeChat Web Slave** 提供两种部署方式：原生 Python venv + systemd，或 Docker Compose。原有配置、微信会话、Telegram 群组绑定默认不迁移、不覆盖、不删除。
 
-> 兼容性说明：微信从端基于非官方微信网页版协议，并非所有账号都能登录。旧版 Telegram 与微信插件也未保证与所有新 Python 版本兼容。Docker 默认 Python 3.12，以尽量避开 Python 3.13 删除旧标准库模块带来的兼容风险。仍需实际测试。
+> 兼容性说明：微信从端基于非官方微信网页版协议，并非所有账号都能登录。旧版 Telegram 与微信插件也未保证与所有新 Python 版本兼容。Docker 默认 Python 3.12，以尽量避开 Python 3.13 删除旧标准库模块带来的兼容风险。为兼容旧版 `python-telegram-bot 13.x`，目前还需将 `urllib3` 限制在 1.26.x，并将 Peewee 限制在 3.x；这是过渡性的旧依赖兼容措施，**不代表该依赖组合具有最新安全维护保障**。仍需实际测试。
 
 ## 下载
 
