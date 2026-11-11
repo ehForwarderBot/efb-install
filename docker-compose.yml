@@ -3,10 +3,24 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        EFB_UID: "${EFB_UID:-1000}"
+        EFB_GID: "${EFB_GID:-1000}"
     image: efb-install:local
     restart: unless-stopped
     init: true
+    stop_grace_period: 90s
     user: "${EFB_UID:-1000}:${EFB_GID:-1000}"
+    command: ["ehforwarderbot", "--profile", "${EFB_PROFILE:-default}"]
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
     environment:
       HOME: /home/efb
       USER: efb
