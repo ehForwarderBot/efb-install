@@ -21,4 +21,4 @@ jobs:
         run: |
           docker compose --env-file .env build efb
           docker compose --env-file .env run --rm --no-deps efb python -m pip check
-          docker compose --env-file .env run --rm --no-deps efb python -c 'import ehforwarderbot, efb_telegram_master, efb_wechat_slave'
+          docker compose --env-file .env run --rm --no-deps efb python -c 'import ehforwarderbot.__main__, ehforwarderbot.wizard, efb_telegram_master, efb_wechat_slave; from telegram.ext import JobQueue; JobQueue()'
