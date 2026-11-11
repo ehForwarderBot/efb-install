@@ -115,6 +115,7 @@ Profile 只允许小写字母、数字、连字符和下划线（以字母开头
 - 新脚本通过 `EFB_PROFILE=alpha` 为原生模式生成独立的 `efb-alpha` 服务、`efb-alpha` Linux 用户、Home、venv，避免多个 Profile 互相影响；不自动迁移或覆写现存服务。
 - 实测三个 Profile 都启用了 `catbaron.link_preview` 与 `catbaron.mp_instantview`。对应的安装包为 `efb-link-preview-middleware==0.1.0` 和 `efb-mp-instantview-middleware==0.3.2`（放在 `requirements-extra.txt`，按需取消注释）。另有独立环境安装了 `efb-online-guard`，不能简单假设该包对所有人可从 PyPI 安装。
 - 新增 `tools/validate_profile.py`：只读取配置结构和 EFB entry point，确认 Master、Slave、Middleware 均已注册；检测到缺失插件时，阻止新容器或新原生服务启动。它不会输出 Token、微信缓存或业务数据库内容。
+- 如果需要只读诊断旧服务的 FD，而不安装或迁移它，可以在支持该脚本的 Linux 主机使用 `sudo EFB_INSPECT_SERVICE=efbsssuck bash install.sh native doctor`。该变量**仅对 doctor 生效**，不会授权安装器覆盖旧服务；对旧服务只输出 systemd 状态与 FD，不会猜测它的 HOME 或 Python 目录。
 - `Could not determine home directory` 应优先排查服务用户、passwd 记录、`HOME` 和数据目录权限。Dockerfile 现在会依照映射的 UID/GID 创建真实用户，而不只设置 `USER` 环境变量。
 
 ### 2. FD 增长与 SQLite/Peewee

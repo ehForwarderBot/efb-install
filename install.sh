@@ -188,6 +188,7 @@ EFB_UNIT
 
 native_backup() {
   need_root
+  native_guard
   [[ -d "$SERVICE_HOME/.ehforwarderbot" ]] || die "找不到原生 EFB 配置目录。"
   local target="${1:-$PWD/efb-native-$EFB_PROFILE-$(date +%Y%m%d-%H%M%S).tar.gz}"
   local running=0 result=0
@@ -295,13 +296,20 @@ native_info() {
 
 native_doctor() {
   need_linux
-  native_info
-  if command -v systemctl >/dev/null 2>&1; then
-    systemctl show "$SERVICE" --property=LoadState,ActiveState,SubState,MainPID,LimitNOFILE --no-pager || true
+  local inspect_service="${EFB_INSPECT_SERVICE:-$SERVICE}"
+  [[ "$inspect_service" =~ ^[a-z][a-z0-9_-]{0,63}$ ]] || die "EFB_INSPECT_SERVICE 服务名不合法。"
+  if [[ "$inspect_service" == "$SERVICE" ]]; then
+    native_info
+  else
+    printf 'Inspecting existing service=%s (read-only; no install/migration)\n' "$inspect_service"
   fi
-  [[ -f "$SERVICE_HOME/.ehforwarderbot/profiles/$EFB_PROFILE/config.yaml" ]] ||
+  if command -v systemctl >/dev/null 2>&1; then
+    systemctl show "$inspect_service" --property=LoadState,ActiveState,SubState,MainPID,LimitNOFILE --no-pager || true
+  fi
+  if [[ "$inspect_service" == "$SERVICE" && ! -f "$SERVICE_HOME/.ehforwarderbot/profiles/$EFB_PROFILE/config.yaml" ]]; then
     info "提示：当前 Profile 尚无 config.yaml；请先运行 native configure。"
-  if [[ -x "$VENV_DIR/bin/python" ]]; then
+  fi
+  if [[ "$inspect_service" == "$SERVICE" && -x "$VENV_DIR/bin/python" ]]; then
     if [[ -f "$SERVICE_HOME/.ehforwarderbot/profiles/$EFB_PROFILE/config.yaml" ]]; then
       "$VENV_DIR/bin/python" "$REPO_DIR/tools/validate_profile.py" --home "$SERVICE_HOME" --profile "$EFB_PROFILE" ||
         info "警告：Profile 缺少所需模块，检查 requirements-extra.txt。"
@@ -318,10 +326,10 @@ for package in ("ehforwarderbot", "efb-telegram-master", "efb-wechat-slave", "py
 PY
   fi
   local pid fd_count fd_limit db_fd=0 item link
-  pid="$(systemctl show "$SERVICE" --property=MainPID --value 2>/dev/null || true)"
+  pid="$(systemctl show "$inspect_service" --property=MainPID --value 2>/dev/null || true)"
   if [[ "$pid" =~ ^[1-9][0-9]*$ && -d "/proc/$pid/fd" ]]; then
     fd_count="$(find "/proc/$pid/fd" -mindepth 1 -maxdepth 1 -printf '.' 2>/dev/null | wc -c | tr -d ' ')"
-    fd_limit="$(systemctl show "$SERVICE" --property=LimitNOFILE --value 2>/dev/null || true)"
+    fd_limit="$(systemctl show "$inspect_service" --property=LimitNOFILE --value 2>/dev/null || true)"
     for item in "/proc/$pid/fd/"*; do
       link="$(readlink -- "$item" 2>/dev/null || true)"
       case "$link" in
@@ -421,6 +429,7 @@ usage() {
   EFB_PYTHON=/path/to/python3           # 原生模式所使用的 Python
   EFB_VENV_DIR=/opt/efb-alpha/venv-v2  # 原生更新时，新 venv 应使用独立路径
   EFB_NOFILE=16384                      # 原生 systemd 的 LimitNOFILE（非泄漏修复）
+  EFB_INSPECT_SERVICE=efbsssuck         # 仅 native doctor 可只读检查现有服务
 注意: 此脚本不会卸载或自动迁移已有 EFB 实例，也不会清理登录缓存。
 HELP
 }
